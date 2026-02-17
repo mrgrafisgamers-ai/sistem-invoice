@@ -133,7 +133,7 @@
                 <p>No Invoice : <span id="p4-inv" class="font-bold"></span></p>
             </div>
             <table class="w-full text-xs border mb-10"><thead class="bg-gray-100"><tr><th class="p-1 border w-10">No</th><th class="p-1 border text-left">Titik Lokasi / Materi</th><th class="p-1 border">Status</th><th class="p-1 border">Keterangan</th></tr></thead><tbody id="p4-table"></tbody></table>
-            <div class="grid grid-cols-3 text-center mt-32 text-xs"><div><p class="mb-24">Dibuat Oleh:</p><p class="font-bold underline">Petugas Lapangan</p></div><div><p class="mb-24">Diperiksa Oleh:</p><p class="font-bold underline">Penanggung Jawab/PIC</p></div><div><p class="mb-24">Mengetahui:</p><p id="TL/SC" class="font-bold underline uppercase"></p></div></div>
+            <div class="grid grid-cols-3 text-center mt-32 text-xs"><div><p class="mb-24">Dibuat Oleh:</p><p class="font-bold underline">Petugas Lapangan</p></div><div><p class="mb-24">Diperiksa Oleh:</p><p class="font-bold underline">Penanggung Jawab/PIC</p></div><div><p class="mb-24">Mengetahui:</p><p class="font-bold underline">TL/SC</p></div></div>
         </div>
 
         <div class="pdf-page">
@@ -235,7 +235,7 @@
             document.getElementById('p1-terbilang').innerText = terbilang(h[3]) + " Rupiah";
             document.getElementById('p1-total').innerText = Number(h[3]).toLocaleString();
             document.getElementById('p2-total').innerText = "Rp. " + Number(h[3]).toLocaleString();
-            document.getElementById('p1-note').innerText = "Pembayaran materi pekerjaan sesuai invoice #" + h[0];
+            document.getElementById('p1-note').innerText = "Pemasangan Materi sesuai invoice #" + h[0];
 
             // Render Table Items
             let htmlI = "", htmlB = "", htmlK = "";
