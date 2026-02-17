@@ -3,28 +3,30 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sistem Invoice Pro - 5 Halaman</title>
+    <title>Sistem Invoice Pro - Update Fix</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Crimson+Pro:wght@400;700&family=Inter:wght@400;700&display=swap');
-        .pdf-page { width: 210mm; min-height: 296mm; padding: 15mm; margin: auto; background: white; page-break-after: always; color: #1a202c; position: relative; }
+        .pdf-page { width: 210mm; min-height: 296mm; padding: 15mm; margin: auto; background: white; page-break-after: always; color: #1a202c; position: relative; font-family: 'Inter', sans-serif; }
         #pdf-content { display: none; }
+        .kop-header { border-bottom: 3px solid #000; padding-bottom: 10px; margin-bottom: 20px; display: flex; align-items: center; justify-content: space-between; }
         .kwitansi-border { border: 2px solid #2d3748; padding: 20px; background-image: url('https://www.transparenttextures.com/patterns/cubes.png'); }
         .line-dotted { border-bottom: 1px dotted #4a5568; flex-grow: 1; margin-left: 10px; min-height: 20px; }
         .amount-box { background: #edf2f7; border: 2px solid #2d3748; padding: 10px 20px; font-size: 24px; font-weight: bold; display: inline-block; }
         .photo-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px; }
         #loader { display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.8); z-index:9999; justify-content:center; align-items:center; color:white; flex-direction:column; }
+        @media print { .no-print { display: none; } }
     </style>
 </head>
 <body class="bg-slate-900 py-10">
 
-    <div id="loader"><div class="animate-spin rounded-full h-12 w-12 border-b-2 border-white mb-4"></div><p>Sinkronisasi Data...</p></div>
+    <div id="loader"><div class="animate-spin rounded-full h-12 w-12 border-b-2 border-white mb-4"></div><p id="loader-text">Sinkronisasi Data...</p></div>
 
-    <div class="max-w-6xl mx-auto space-y-6 px-4">
+    <div class="max-w-6xl mx-auto space-y-6 px-4 no-print">
         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div class="bg-white p-6 rounded-2xl shadow-xl border-t-4 border-indigo-500">
-                <h4 class="font-black mb-4 uppercase text-xs">Database Klien (Edit/Hapus)</h4>
+                <h4 class="font-black mb-4 uppercase text-xs">Database Klien</h4>
                 <div class="flex gap-2 mb-4">
                     <input type="text" id="regKlienNama" placeholder="Nama PT" class="flex-1 border p-2 rounded text-sm">
                     <input type="text" id="regKlienAlamat" placeholder="Alamat" class="flex-1 border p-2 rounded text-sm">
@@ -34,14 +36,14 @@
             </div>
 
             <div class="bg-white p-6 rounded-2xl shadow-xl border-t-4 border-orange-500">
-                <h4 class="font-black mb-4 uppercase text-xs">Cetak Ulang dari History</h4>
+                <h4 class="font-black mb-4 uppercase text-xs">History & Cetak Ulang</h4>
                 <div class="flex gap-2 mb-4">
                     <select id="selectHistory" class="flex-1 border p-2 rounded text-sm font-bold"></select>
-                    <button onclick="prepareCetakFromHistory()" class="bg-emerald-600 text-white px-4 py-2 rounded font-bold text-xs">CETAK 5 HALAMAN</button>
+                    <button onclick="prepareCetakFromHistory()" class="bg-emerald-600 text-white px-4 py-2 rounded font-bold text-xs uppercase">Cetak 5 Hal</button>
                 </div>
                 <div class="h-32 overflow-y-auto border rounded" id="historyView">
                     <table class="w-full text-[10px] text-left">
-                        <thead class="bg-gray-100 sticky top-0"><tr><th class="p-1">No Inv</th><th class="p-1">Klien</th><th class="p-1">Aksi</th></tr></thead>
+                        <thead class="bg-gray-100 sticky top-0"><tr><th class="p-1">No Inv</th><th class="p-1">Klien</th><th class="p-1 text-center">Aksi</th></tr></thead>
                         <tbody id="historyBody"></tbody>
                     </table>
                 </div>
@@ -49,23 +51,22 @@
         </div>
 
         <div class="bg-white p-8 rounded-2xl shadow-2xl border border-gray-300">
-            <h2 class="text-3xl font-black mb-8 border-b-4 border-blue-600 pb-2 inline-block uppercase italic">Input Pekerjaan Baru</h2>
+            <h2 id="formTitle" class="text-3xl font-black mb-8 border-b-4 border-blue-600 pb-2 inline-block uppercase italic">Input Pekerjaan Baru</h2>
             
             <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
                 <div class="bg-gray-50 p-4 rounded-lg space-y-3">
-                    <label class="font-bold text-blue-700 text-xs">PERUSAHAAN KITA</label>
+                    <label class="font-bold text-blue-700 text-xs uppercase">Pihak Pertama (Penyedia)</label>
                     <select id="cvName" onchange="autoFillCV()" class="w-full border p-2 rounded font-bold bg-white outline-none"></select>
-                    <input type="text" id="cvAddress" placeholder="Alamat Otomatis" class="w-full border p-2 rounded bg-gray-100 text-[10px]" readonly>
-                    <input type="hidden" id="cvPhone"><input type="hidden" id="cvCity">
+                    <input type="text" id="cvAddress" placeholder="Alamat Kantor" class="w-full border p-2 rounded bg-gray-100 text-[10px]" readonly>
                 </div>
                 <div class="bg-gray-50 p-4 rounded-lg space-y-3">
-                    <label class="font-bold text-green-700 text-xs">DATA KLIEN</label>
+                    <label class="font-bold text-green-700 text-xs uppercase">Pihak Kedua (Klien)</label>
                     <select id="clientName" onchange="generateAutoInvoice()" class="w-full border p-2 rounded font-bold bg-white outline-none"></select>
                     <input type="text" id="invoiceNo" placeholder="No Invoice" class="w-full border p-2 rounded font-mono bg-blue-50">
                     <input type="date" id="invDate" class="w-full border p-2 rounded">
                 </div>
                 <div class="bg-gray-50 p-4 rounded-lg space-y-3">
-                    <label class="font-bold text-orange-700 text-xs">DOKUMENTASI</label>
+                    <label class="font-bold text-orange-700 text-xs uppercase">Dokumentasi Foto</label>
                     <input type="file" id="imageInput" accept="image/*" multiple class="w-full text-[10px]">
                     <div id="preview" class="h-20 border-2 border-dashed grid grid-cols-3 gap-1 p-1"></div>
                 </div>
@@ -73,71 +74,119 @@
 
             <table class="w-full border shadow-sm rounded-lg overflow-hidden mb-4">
                 <thead class="bg-slate-800 text-white uppercase text-[10px]">
-                    <tr><th class="p-2">No</th><th class="p-2 text-left">Materi</th><th class="p-2 w-16">Qty</th><th class="p-2 w-16">Freq</th><th class="p-2 text-right">Harga</th><th class="p-2 text-right">Total</th><th class="p-2"></th></tr>
+                    <tr><th class="p-2">No</th><th class="p-2 text-left">Materi Pekerjaan</th><th class="p-2 w-16">Qty</th><th class="p-2 w-16">Freq</th><th class="p-2 text-right">Harga</th><th class="p-2 text-right">Total</th><th class="p-2"></th></tr>
                 </thead>
                 <tbody id="itemContainer"></tbody>
             </table>
-            <button onclick="addItem()" class="text-blue-600 font-bold text-xs mb-8">+ TAMBAH MATERI</button>
+            <button onclick="addItem()" class="text-blue-600 font-bold text-xs mb-8 hover:underline">+ TAMBAH MATERI BARU</button>
 
-            <button onclick="prosesSimpanData()" class="w-full bg-slate-800 text-white py-4 rounded-xl font-black text-xl hover:bg-black transition-all shadow-xl">
-                SIMPAN KE HISTORY
-            </button>
+            <div class="flex gap-4">
+                <button id="btnSave" onclick="prosesSimpanData()" class="flex-1 bg-slate-800 text-white py-4 rounded-xl font-black text-xl hover:bg-black transition-all shadow-xl uppercase tracking-widest">
+                    Simpan & Sinkronkan
+                </button>
+                <button id="btnCancelEdit" onclick="resetForm()" class="hidden bg-red-600 text-white px-6 py-4 rounded-xl font-black text-xl uppercase">Batal</button>
+            </div>
         </div>
     </div>
 
     <div id="pdf-content">
-        <div class="pdf-page">
+        <template id="kop-template">
+            <div class="kop-header">
+                <div class="flex items-center gap-4">
+                    <div class="bg-slate-800 text-white p-2 font-black text-2xl rounded">LOGO</div>
+                    <div>
+                        <h2 class="text-2xl font-black uppercase leading-none cv-title-display"></h2>
+                        <p class="text-[10px] mt-1 cv-addr-display w-96 font-medium italic"></p>
+                    </div>
+                </div>
+                <div class="text-right border-l-2 border-gray-300 pl-4">
+                    <p class="text-[10px] font-bold">Contact Support:</p>
+                    <p class="text-[10px]">Official Invoice System</p>
+                    <p class="text-[10px] italic">Automated Document</p>
+                </div>
+            </div>
+            <div style="border-bottom: 1px solid #000; margin-top: -15px; margin-bottom: 20px;"></div>
+        </template>
+
+        <div class="pdf-page" id="page1">
+            <div id="kop-target-1"></div>
             <div class="kwitansi-border">
-                <div class="flex justify-between items-center mb-10">
-                    <div><h2 id="p1-cv-name" class="text-xl font-bold italic text-blue-900 uppercase"></h2><p id="p1-cv-addr" class="text-[10px]"></p></div>
-                    <div class="text-right"><h1 class="text-4xl font-black border-b-4 border-black tracking-widest">KWITANSI</h1><p class="text-sm mt-1">No: <span id="p1-inv" class="font-bold"></span></p></div>
+                <div class="flex justify-between items-center mb-6">
+                    <h1 class="text-3xl font-black tracking-widest bg-black text-white px-4 py-1">KWITANSI</h1>
+                    <p class="text-sm">No: <span id="p1-inv" class="font-bold underline"></span></p>
                 </div>
                 <div class="space-y-6 text-sm">
-                    <div class="flex items-center"><span>Telah Diterima Dari</span><span class="font-bold ml-2">:</span><div id="p1-client" class="line-dotted font-bold uppercase"></div></div>
-                    <div class="flex items-center"><span>Uang Sejumlah</span><span class="font-bold ml-6">:</span><div id="p1-terbilang" class="line-dotted italic bg-gray-50 px-2 font-bold text-indigo-800"></div></div>
-                    <div class="flex items-center pb-10"><span>Untuk Pembayaran</span><span class="font-bold ml-2">:</span><div id="p1-note" class="line-dotted"></div></div>
+                    <div class="flex items-center"><span>Sudah Terima Dari</span><span class="ml-4">:</span><div id="p1-client" class="line-dotted font-bold uppercase"></div></div>
+                    <div class="flex items-center"><span>Banyaknya Uang</span><span class="ml-6">:</span><div id="p1-terbilang" class="line-dotted italic bg-gray-50 px-2 font-bold text-indigo-900 capitalize"></div></div>
+                    <div class="flex items-center pb-8"><span>Untuk Pembayaran</span><span class="ml-2">:</span><div id="p1-note" class="line-dotted"></div></div>
                 </div>
                 <div class="flex justify-between items-end mt-12">
                     <div class="amount-box">Rp. <span id="p1-total"></span> ,-</div>
-                    <div class="text-center w-64"><p id="p1-date" class="mb-24 italic"></p><p id="p1-sign" class="font-bold underline uppercase"></p><p class="text-[10px]">Tanda tangan & Cap</p></div>
+                    <div class="text-center w-64 border-t border-gray-200 pt-2">
+                        <p id="p1-date" class="mb-20 italic text-xs"></p>
+                        <p id="p1-sign" class="font-bold underline uppercase"></p>
+                        <p class="text-[9px] uppercase text-gray-400">Pihak Pertama</p>
+                    </div>
                 </div>
             </div>
         </div>
 
-        <div class="pdf-page">
-            <div class="flex justify-between border-b-2 border-gray-800 pb-4 mb-8">
-                <div><h1 id="p2-cv-name" class="text-2xl font-black"></h1><p id="p2-cv-addr" class="text-xs w-80"></p></div>
-                <div class="text-right"><h2 class="text-4xl font-light text-gray-300 tracking-widest">INVOICE</h2><p class="font-bold">No: <span id="p2-inv" class="font-normal"></span></p><p class="font-bold">Tgl: <span id="p2-date" class="font-normal"></span></p></div>
+        <div class="pdf-page" id="page2">
+            <div id="kop-target-2"></div>
+            <div class="flex justify-between mb-8">
+                <div>
+                    <p class="text-[10px] font-bold text-gray-400">KEPADA YTH:</p>
+                    <p id="p2-client" class="text-xl font-black uppercase text-slate-800"></p>
+                    <p class="text-xs italic text-gray-500">Di Tempat</p>
+                </div>
+                <div class="text-right">
+                    <h2 class="text-3xl font-light text-gray-400 tracking-tighter mb-2 uppercase">Invoice</h2>
+                    <table class="text-[10px] ml-auto">
+                        <tr><td>No. Invoice</td><td class="px-2">:</td><td id="p2-inv" class="font-bold"></td></tr>
+                        <tr><td>Tanggal</td><td class="px-2">:</td><td id="p2-date-raw"></td></tr>
+                    </table>
+                </div>
             </div>
-            <p class="text-[10px] font-bold text-gray-400 mb-1">KEPADA YTH:</p>
-            <p id="p2-client" class="text-xl font-bold border-l-4 border-blue-600 pl-3 mb-10 uppercase"></p>
-            <table class="w-full text-sm">
-                <thead class="bg-slate-800 text-white"><tr><th class="p-2 border">No</th><th class="p-2 border text-left">Materi Pekerjaan</th><th class="p-2 border">Qty</th><th class="p-2 border">Freq</th><th class="p-2 border text-right">Harga</th><th class="p-2 border text-right">Total</th></tr></thead>
+            <table class="w-full text-xs border-collapse">
+                <thead><tr class="bg-slate-800 text-white"><th class="p-2 border border-slate-700">NO</th><th class="p-2 border border-slate-700 text-left">DESKRIPSI PEKERJAAN</th><th class="p-2 border border-slate-700">QTY</th><th class="p-2 border border-slate-700">FREQ</th><th class="p-2 border border-slate-700 text-right">HARGA</th><th class="p-2 border border-slate-700 text-right">TOTAL</th></tr></thead>
                 <tbody id="p2-table"></tbody>
-                <tfoot class="bg-gray-100 font-bold"><tr><td colspan="5" class="p-2 text-right">GRAND TOTAL</td><td id="p2-total" class="p-2 text-right text-blue-700"></td></tr></tfoot>
+                <tfoot><tr class="font-bold bg-gray-50"><td colspan="5" class="p-2 text-right border uppercase">Total Tagihan</td><td id="p2-total" class="p-2 text-right border text-blue-800"></td></tr></tfoot>
             </table>
-            <div class="mt-20 flex justify-end text-center"><div class="w-64"><p class="mb-24">Hormat Kami,</p><p id="p2-sign" class="font-bold underline uppercase"></p></div></div>
+            <div class="mt-20 flex justify-end text-center"><div class="w-64"><p id="p2-city-date" class="mb-24 text-xs italic"></p><p id="p2-sign" class="font-bold underline uppercase"></p><p class="text-[9px] text-gray-400">DIREKTUR UTAMA</p></div></div>
         </div>
 
-        <div class="pdf-page">
-            <h2 class="text-center font-bold text-xl underline mb-10 uppercase">Berita Acara Serah Terima</h2>
-            <p class="text-sm mb-6">Kami yang bertanda tangan di bawah ini menyatakan bahwa PIHAK I telah menyerahkan materi pekerjaan kepada PIHAK II sesuai Invoice <span id="p3-inv" class="font-bold"></span> sebagai berikut:</p>
-            <table class="w-full text-xs border mb-10"><thead class="bg-gray-100"><tr><th class="p-1 border w-10">No</th><th class="p-1 border text-left">Materi Pekerjaan</th><th class="p-1 border w-24">Jumlah</th></tr></thead><tbody id="p3-table"></tbody></table>
-            <div class="grid grid-cols-2 text-center mt-32"><div><p class="mb-24">PIHAK PERTAMA</p><p id="p3-sign-1" class="font-bold underline uppercase"></p></div><div><p class="mb-24">PIHAK KEDUA</p><p class="font-bold underline">________________</p></div></div>
-        </div>
-
-        <div class="pdf-page">
-            <h2 class="text-center font-bold text-xl underline mb-10 uppercase">Berita Acara Kontrol Pemasangan</h2>
-            <div class="text-sm mb-6 space-y-2">
-                <p>Nama Klien : <span id="p4-client" class="font-bold"></span></p>
-                <p>No Invoice : <span id="p4-inv" class="font-bold"></span></p>
+        <div class="pdf-page" id="page3">
+            <div id="kop-target-3"></div>
+            <h2 class="text-center font-black text-xl underline mb-10 uppercase tracking-widest">Berita Acara Serah Terima</h2>
+            <p class="text-sm leading-relaxed mb-6">Pada hari ini, Kami yang bertanda tangan di bawah ini menyatakan bahwa <b>PIHAK PERTAMA</b> telah menyelesaikan dan menyerahkan hasil pekerjaan kepada <b>PIHAK KEDUA</b> dengan rincian sebagai berikut:</p>
+            <table class="w-full text-xs border mb-10"><thead class="bg-gray-100"><tr><th class="p-2 border w-12">No</th><th class="p-2 border text-left">Materi Pekerjaan</th><th class="p-2 border w-24">Volume</th></tr></thead><tbody id="p3-table"></tbody></table>
+            <p class="text-sm mb-12 italic text-gray-600">* Hasil pekerjaan telah diperiksa dan diterima dalam kondisi baik.</p>
+            <div class="grid grid-cols-2 text-center">
+                <div><p class="mb-24 text-sm font-bold">PIHAK PERTAMA</p><p id="p3-sign-1" class="font-bold underline uppercase"></p></div>
+                <div><p class="mb-24 text-sm font-bold">PIHAK KEDUA</p><p class="font-bold underline">________________</p></div>
             </div>
-            <table class="w-full text-xs border mb-10"><thead class="bg-gray-100"><tr><th class="p-1 border w-10">No</th><th class="p-1 border text-left">Titik Lokasi / Materi</th><th class="p-1 border">Status</th><th class="p-1 border">Keterangan</th></tr></thead><tbody id="p4-table"></tbody></table>
-            <div class="grid grid-cols-3 text-center mt-32 text-xs"><div><p class="mb-24">Dibuat Oleh:</p><p class="font-bold underline">Petugas Lapangan</p></div><div><p class="mb-24">Diperiksa Oleh:</p><p class="font-bold underline">Penanggung Jawab/PIC</p></div><div><p class="mb-24">Mengetahui:</p><p class="font-bold underline">TL/SC</p></div></div>
         </div>
 
-        <div class="pdf-page">
-            <h2 class="text-center font-bold text-lg underline mb-6 uppercase">Lampiran Dokumentasi Pekerjaan</h2>
+        <div class="pdf-page" id="page4">
+            <div id="kop-target-4"></div>
+            <h2 class="text-center font-black text-xl underline mb-10 uppercase tracking-widest">Kontrol Pemasangan Lapangan</h2>
+            <div class="grid grid-cols-2 gap-4 text-xs mb-8 bg-gray-50 p-4 border-l-4 border-orange-500">
+                <p>NAMA KLIEN: <span id="p4-client" class="font-bold uppercase"></span></p>
+                <p>NOMOR INVOICE: <span id="p4-inv" class="font-bold"></span></p>
+            </div>
+            <table class="w-full text-[10px] border mb-10">
+                <thead class="bg-slate-100"><tr><th class="p-2 border">NO</th><th class="p-2 border text-left">LOKASI / MATERI</th><th class="p-2 border w-20">KONDISI</th><th class="p-2 border text-left">KETERANGAN</th></tr></thead>
+                <tbody id="p4-table"></tbody>
+            </table>
+            <div class="grid grid-cols-3 text-[9px] text-center mt-20 gap-4">
+                <div><p class="mb-20">DIBUAT OLEH:</p><p class="underline font-bold">TIM LAPANGAN</p></div>
+                <div><p class="mb-20">DIPERIKSA OLEH:</p><p class="underline font-bold">PIC/PENANGGUNG JAWAB</p></div>
+                <div><p class="mb-20">MENGETAHUI:</p><p class="underline font-bold">KOORDINATOR</p></div>
+            </div>
+        </div>
+
+        <div class="pdf-page" id="page5">
+            <h2 class="text-center font-black text-lg underline mb-8 uppercase tracking-widest">Lampiran Dokumentasi Foto</h2>
             <div id="p5-img-container" class="photo-grid"></div>
         </div>
     </div>
@@ -145,57 +194,103 @@
     <script>
         const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxb4RNcgai6_-4OLmgjwRWYWgVt-osxIQF0mqtcJPZ0CCtfl8lnu51wKPcSYQmPPADc0g/exec';
         let db = { klien: [], perusahaan: [], history: [] };
+        let isEditMode = false;
 
         window.onload = async () => { await refreshData(); addItem(); };
 
         async function refreshData() {
-            toggleLoader(true);
+            toggleLoader(true, "Sinkronisasi Data...");
             try {
                 const r = await fetch(SCRIPT_URL);
                 db = await r.json();
                 renderUI();
-            } catch (e) { console.error("Load failed"); }
+            } catch (e) { alert("Gagal mengambil data."); }
             toggleLoader(false);
         }
 
-        function toggleLoader(s) { document.getElementById('loader').style.display = s ? 'flex' : 'none'; }
+        function toggleLoader(s, text = "") { 
+            document.getElementById('loader').style.display = s ? 'flex' : 'none'; 
+            if(text) document.getElementById('loader-text').innerText = text;
+        }
 
         function renderUI() {
-            // Dropdowns
             const cvS = document.getElementById('cvName'), clS = document.getElementById('clientName'), selH = document.getElementById('selectHistory');
             cvS.innerHTML = '<option value="">-- Pilih Perusahaan --</option>';
             clS.innerHTML = '<option value="">-- Pilih Klien --</option>';
             selH.innerHTML = '<option value="">-- Pilih Data History --</option>';
             
             db.perusahaan.forEach(p => cvS.innerHTML += `<option value="${p[0]}" data-addr="${p[1]}" data-city="${p[3]}">${p[0]}</option>`);
+            
+            const listK = document.getElementById('klienList');
+            listK.innerHTML = '';
             db.klien.forEach(k => {
                 clS.innerHTML += `<option value="${k[0]}" data-addr="${k[1]}">${k[0]}</option>`;
-                document.getElementById('klienList').innerHTML += `<div class="flex justify-between text-xs bg-gray-50 p-2 border rounded"><span><b>${k[0]}</b></span><button onclick="manageKlien('deleteKlien','${k[0]}')" class="text-red-500">Hapus</button></div>`;
+                listK.innerHTML += `<div class="flex justify-between items-center text-xs bg-gray-50 p-2 border rounded shadow-sm">
+                    <span><b>${k[0]}</b></span>
+                    <button onclick="manageKlien('deleteKlien','${k[0]}')" class="text-red-500 font-bold hover:underline">Hapus</button>
+                </div>`;
             });
 
-            // History Table
             const hBody = document.getElementById('historyBody');
             hBody.innerHTML = '';
             db.history.slice().reverse().forEach(h => {
                 selH.innerHTML += `<option value="${h[0]}">${h[0]} - ${h[2]}</option>`;
-                hBody.innerHTML += `<tr class="border-b"><td class="p-1">${h[0]}</td><td class="p-1 font-bold">${h[2]}</td><td class="p-1"><button onclick="deleteHistory('${h[0]}')" class="text-red-500">✕</button></td></tr>`;
+                hBody.innerHTML += `<tr class="border-b hover:bg-gray-50">
+                    <td class="p-2 font-mono">${h[0]}</td>
+                    <td class="p-2 font-bold text-gray-700">${h[2]}</td>
+                    <td class="p-2 text-center flex gap-1 justify-center">
+                        <button onclick="editHistory('${h[0]}')" class="bg-blue-100 text-blue-600 px-2 py-1 rounded text-[9px] font-bold hover:bg-blue-600 hover:text-white">EDIT</button>
+                        <button onclick="deleteHistory('${h[0]}')" class="bg-red-100 text-red-600 px-2 py-1 rounded text-[9px] font-bold hover:bg-red-600 hover:text-white">HAPUS</button>
+                    </td>
+                </tr>`;
             });
         }
 
-        function addItem() {
+        function addItem(n="", q=1, f=1, p="") {
             const b = document.getElementById('itemContainer'), r = document.createElement('tr');
             r.innerHTML = `<td class="p-2 text-center text-xs text-gray-400 font-bold">${b.children.length+1}</td>
-                <td><input type="text" class="w-full border p-1 text-xs item-n"></td>
-                <td><input type="number" class="w-full border p-1 text-center text-xs item-q" value="1"></td>
-                <td><input type="number" class="w-full border p-1 text-center text-xs item-f" value="1"></td>
-                <td><input type="number" class="w-full border p-1 text-right text-xs item-p"></td>
-                <td class="p-2 text-right text-xs font-bold item-total">0</td>
-                <td class="text-center"><button onclick="this.parentElement.parentElement.remove()">✕</button></td>`;
+                <td><input type="text" class="w-full border p-1 text-xs item-n font-medium" value="${n}"></td>
+                <td><input type="number" class="w-full border p-1 text-center text-xs item-q" value="${q}"></td>
+                <td><input type="number" class="w-full border p-1 text-center text-xs item-f" value="${f}"></td>
+                <td><input type="number" class="w-full border p-1 text-right text-xs item-p" value="${p}"></td>
+                <td class="p-2 text-right text-xs font-bold item-total">${(q*f*p).toLocaleString()}</td>
+                <td class="text-center"><button onclick="this.parentElement.parentElement.remove()" class="text-red-300 hover:text-red-600">✕</button></td>`;
             b.appendChild(r);
             r.querySelectorAll('input').forEach(i => i.addEventListener('input', () => {
-                const q = r.querySelector('.item-q').value, f = r.querySelector('.item-f').value, p = r.querySelector('.item-p').value;
-                r.querySelector('.item-total').innerText = (q * f * p).toLocaleString();
+                const qq = r.querySelector('.item-q').value, ff = r.querySelector('.item-f').value, pp = r.querySelector('.item-p').value;
+                r.querySelector('.item-total').innerText = (qq * ff * pp).toLocaleString();
             }));
+        }
+
+        function editHistory(inv) {
+            const h = db.history.find(x => x[0] === inv);
+            if(!h) return;
+            isEditMode = true;
+            document.getElementById('formTitle').innerText = "Edit Data: " + inv;
+            document.getElementById('invoiceNo').value = h[0];
+            document.getElementById('invDate').value = h[1];
+            document.getElementById('clientName').value = h[2];
+            document.getElementById('cvName').value = h[5];
+            autoFillCV();
+            
+            const container = document.getElementById('itemContainer');
+            container.innerHTML = '';
+            const items = JSON.parse(h[4]);
+            items.forEach(it => addItem(it.n, it.q, it.f, it.p));
+            
+            document.getElementById('btnSave').innerText = "UPDATE & SINKRON";
+            document.getElementById('btnCancelEdit').classList.remove('hidden');
+            window.scrollTo({ top: 500, behavior: 'smooth' });
+        }
+
+        function resetForm() {
+            isEditMode = false;
+            document.getElementById('formTitle').innerText = "Input Pekerjaan Baru";
+            document.getElementById('invoiceNo').value = '';
+            document.getElementById('itemContainer').innerHTML = '';
+            document.getElementById('btnSave').innerText = "Simpan & Sinkronkan";
+            document.getElementById('btnCancelEdit').classList.add('hidden');
+            addItem();
         }
 
         async function prosesSimpanData() {
@@ -203,7 +298,7 @@
                 n: r.querySelector('.item-n').value, q: r.querySelector('.item-q').value, f: r.querySelector('.item-f').value, p: r.querySelector('.item-p').value
             }));
             const data = {
-                action: 'saveInvoice',
+                action: isEditMode ? 'updateInvoice' : 'saveInvoice',
                 inv: document.getElementById('invoiceNo').value,
                 date: document.getElementById('invDate').value,
                 client: document.getElementById('clientName').value,
@@ -212,70 +307,108 @@
                 items: items,
                 total: items.reduce((a,c) => a + (c.q * c.f * c.p), 0)
             };
-            if(!data.inv || !data.client) return alert("Data Belum Lengkap!");
+            if(!data.inv || !data.client || items.length === 0) return alert("Lengkapi data!");
+            toggleLoader(true, "Menyimpan...");
+            await fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify(data) });
+            await refreshData();
+            resetForm();
+            alert("Berhasil disinkronkan!");
+        }
+
+        async function deleteHistory(inv) {
+            if(!confirm(`Hapus ${inv}?`)) return;
+            toggleLoader(true, "Menghapus...");
+            await fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify({ action: 'deleteHistory', inv: inv }) });
+            await refreshData();
+        }
+
+        async function manageKlien(action, nama) {
+            const data = { action, nama, alamat: document.getElementById('regKlienAlamat').value };
+            if(action === 'registerKlien') data.nama = document.getElementById('regKlienNama').value;
             toggleLoader(true);
             await fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify(data) });
             await refreshData();
-            alert("Data Berhasil Masuk History!");
+        }
+
+        function formatTglIndo(tglStr, kota = "") {
+            if(!tglStr) return "";
+            const d = new Date(tglStr);
+            const bln = ["Januari", "Februari", "Maret", "April", "Mei", "Juni", "Juli", "Agustus", "September", "Oktober", "November", "Desember"];
+            const hasil = `${d.getDate()} ${bln[d.getMonth()]} ${d.getFullYear()}`;
+            return kota ? `${kota}, ${hasil}` : hasil;
         }
 
         async function prepareCetakFromHistory() {
             const id = document.getElementById('selectHistory').value;
             if(!id) return alert("Pilih history!");
             const h = db.history.find(x => x[0] === id), items = JSON.parse(h[4]);
+            const city = db.perusahaan.find(p => p[0] === h[5])?.[3] || "Jakarta";
             
-            // Mapping Template
+            const temp = document.getElementById('kop-template').innerHTML;
+            [1,2,3,4].forEach(i => {
+                const target = document.getElementById(`kop-target-${i}`);
+                target.innerHTML = temp;
+                target.querySelector('.cv-title-display').innerText = h[5];
+                target.querySelector('.cv-addr-display').innerText = h[6];
+            });
+
             document.querySelectorAll('[id$="-inv"]').forEach(e => e.innerText = h[0]);
             document.querySelectorAll('[id$="-client"]').forEach(e => e.innerText = h[2]);
-            document.querySelectorAll('[id$="-cv-name"]').forEach(e => e.innerText = h[5]);
-            document.querySelectorAll('[id$="-cv-addr"]').forEach(e => e.innerText = h[6]);
             document.querySelectorAll('[id$="-sign"], [id$="-sign-1"]').forEach(e => e.innerText = h[5]);
-            document.getElementById('p1-date').innerText = "Jakarta, " + h[1];
-            document.getElementById('p2-date').innerText = h[1];
-            document.getElementById('p1-terbilang').innerText = terbilang(h[3]) + " Rupiah";
-            document.getElementById('p1-total').innerText = Number(h[3]).toLocaleString();
-            document.getElementById('p2-total').innerText = "Rp. " + Number(h[3]).toLocaleString();
-            document.getElementById('p1-note').innerText = "Pemasangan Materi sesuai invoice #" + h[0];
+            
+            const tglFull = formatTglIndo(h[1], city);
+            document.getElementById('p1-date').innerText = tglFull;
+            document.getElementById('p2-date-raw').innerText = formatTglIndo(h[1]);
+            document.getElementById('p2-city-date').innerText = tglFull;
+            
+            const nominal = Number(h[3]);
+            document.getElementById('p1-terbilang').innerText = terbilang(nominal) + " Rupiah";
+            document.getElementById('p1-total').innerText = nominal.toLocaleString();
+            document.getElementById('p2-total').innerText = "Rp. " + nominal.toLocaleString();
+            document.getElementById('p1-note').innerText = "Pemasangan materi promosi sesuai invoice #" + h[0];
 
-            // Render Table Items
-            let htmlI = "", htmlB = "", htmlK = "";
+            let hI = "", hB = "", hK = "";
             items.forEach((item, i) => {
                 const t = item.q * item.f * item.p;
-                htmlI += `<tr><td class="border p-1 text-center">${i+1}</td><td class="border p-1">${item.n}</td><td class="border p-1 text-center">${item.q}</td><td class="border p-1 text-center">${item.f}</td><td class="border p-1 text-right">${Number(item.p).toLocaleString()}</td><td class="border p-1 text-right">${t.toLocaleString()}</td></tr>`;
-                htmlB += `<tr><td class="border p-1 text-center">${i+1}</td><td class="border p-1">${item.n}</td><td class="border p-1 text-center">${item.q}</td></tr>`;
-                htmlK += `<tr><td class="border p-1 text-center">${i+1}</td><td class="border p-1">${item.n}</td><td class="border p-1 text-center">OK</td><td class="border p-1 text-center">Terpasang</td></tr>`;
+                hI += `<tr class="border"><td class="p-2 text-center">${i+1}</td><td class="p-2">${item.n}</td><td class="p-2 text-center">${item.q}</td><td class="p-2 text-center">${item.f}</td><td class="p-2 text-right">${Number(item.p).toLocaleString()}</td><td class="p-2 text-right font-bold">${t.toLocaleString()}</td></tr>`;
+                hB += `<tr><td class="p-2 border text-center">${i+1}</td><td class="p-2 border">${item.n}</td><td class="p-2 border text-center font-bold">${item.q} Unit</td></tr>`;
+                hK += `<tr><td class="p-2 border text-center">${i+1}</td><td class="p-2 border font-medium">${item.n}</td><td class="p-2 border text-center text-green-600 font-bold">✓ OK</td><td class="p-2 border">Terpasang rapi</td></tr>`;
             });
-            document.getElementById('p2-table').innerHTML = htmlI;
-            document.getElementById('p3-table').innerHTML = htmlB;
-            document.getElementById('p4-table').innerHTML = htmlK;
+            document.getElementById('p2-table').innerHTML = hI;
+            document.getElementById('p3-table').innerHTML = hB;
+            document.getElementById('p4-table').innerHTML = hK;
 
-            // Generate PDF
             const el = document.getElementById('pdf-content');
             el.style.display = 'block';
             html2pdf().from(el).set({
-                margin:0, filename:`${h[2]}_${h[0]}.pdf`, html2canvas:{scale:2}, jsPDF:{unit:'mm',format:'a4',orientation:'portrait'}
+                margin:0, filename:`DOKUMEN_${h[2]}_${h[0]}.pdf`, html2canvas:{scale:2, useCORS: true}, jsPDF:{unit:'mm',format:'a4',orientation:'portrait'}
             }).save().then(() => el.style.display = 'none');
         }
 
-        // Helpers
         function terbilang(n) {
-            const b = ["", "Satu", "Dua", "Tiga", "Empat", "Lima", "Enam", "Tujuh", "Delapan", "Sembilan", "Sepuluh", "Sebelas"];
-            if (n < 12) return b[n];
-            if (n < 20) return terbilang(n - 10) + " Belas";
-            if (n < 100) return terbilang(Math.floor(n / 10)) + " Puluh " + terbilang(n % 10);
-            if (n < 200) return "Seratus " + terbilang(n - 100);
-            if (n < 1000) return terbilang(Math.floor(n / 100)) + " Ratus " + terbilang(n % 100);
-            if (n < 1000000) return terbilang(Math.floor(n / 1000)) + " Ribu " + terbilang(n % 1000);
-            return "";
+            n = Math.abs(n);
+            const b = ["", "satu", "dua", "tiga", "empat", "lima", "enam", "tujuh", "delapan", "sembilan", "sepuluh", "sebelas"];
+            let temp = "";
+            if (n < 12) temp = " " + b[n];
+            else if (n < 20) temp = terbilang(n - 10) + " belas";
+            else if (n < 100) temp = terbilang(Math.floor(n / 10)) + " puluh" + terbilang(n % 10);
+            else if (n < 200) temp = " seratus" + terbilang(n - 100);
+            else if (n < 1000) temp = terbilang(Math.floor(n / 100)) + " ratus" + terbilang(n % 100);
+            else if (n < 2000) temp = " seribu" + terbilang(n - 1000);
+            else if (n < 1000000) temp = terbilang(Math.floor(n / 1000)) + " ribu" + terbilang(n % 1000);
+            else if (n < 1000000000) temp = terbilang(Math.floor(n / 1000000)) + " juta" + terbilang(n % 1000000);
+            return temp.trim();
         }
 
         function autoFillCV() {
             const o = document.getElementById('cvName').options[document.getElementById('cvName').selectedIndex];
-            document.getElementById('cvAddress').value = o.dataset.addr;
+            document.getElementById('cvAddress').value = o.dataset.addr || '';
         }
 
         function generateAutoInvoice() {
+            if(isEditMode) return;
             const k = document.getElementById('clientName').value;
+            if(!k) return;
             const c = db.history.filter(h => h[2] === k).length + 1;
             document.getElementById('invoiceNo').value = `INV/${new Date().getFullYear()}/${k.substring(0,3).toUpperCase()}/${String(c).padStart(3,'0')}`;
         }
@@ -286,8 +419,8 @@
             Array.from(e.target.files).forEach(f => {
                 const r = new FileReader();
                 r.onload = ev => {
-                    pr.innerHTML += `<img src="${ev.target.result}" class="h-20 w-full object-cover">`;
-                    c5.innerHTML += `<div class="border p-1"><img src="${ev.target.result}" class="max-h-80 mx-auto"></div>`;
+                    pr.innerHTML += `<img src="${ev.target.result}" class="h-20 w-full object-cover rounded shadow-sm">`;
+                    c5.innerHTML += `<div class="border p-2 bg-gray-50 rounded"><img src="${ev.target.result}" class="max-h-80 mx-auto rounded shadow"></div>`;
                 };
                 r.readAsDataURL(f);
             });
