@@ -1,0 +1,372 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistem Invoice Professional - Sheets Integrated</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Crimson+Pro:ital,wght@0,400;0,700;1,400&family=Inter:wght@400;700&display=swap');
+        .pdf-page { width: 210mm; min-height: 296mm; padding: 15mm; margin: auto; background: white; page-break-after: always; color: #1a202c; }
+        #pdf-content { display: none; }
+        .kwitansi-border { border: 2px solid #2d3748; padding: 20px; position: relative; background-image: url('https://www.transparenttextures.com/patterns/cubes.png'); }
+        .kwitansi-title { font-family: 'Crimson Pro', serif; font-size: 32px; font-weight: bold; letter-spacing: 4px; border-bottom: 2px solid #2d3748; }
+        .line-dotted { border-bottom: 1px dotted #4a5568; flex-grow: 1; margin-left: 10px; padding-bottom: 2px; }
+        .amount-box { font-family: 'Inter', sans-serif; background: #edf2f7; border: 2px solid #2d3748; padding: 10px 20px; font-size: 24px; font-weight: bold; display: inline-block; }
+        .photo-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px; }
+        .photo-item { border: 1px solid #e2e8f0; padding: 5px; text-align: center; }
+    </style>
+</head>
+<body class="bg-slate-800 py-10">
+
+    <div class="max-w-5xl mx-auto space-y-6">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div class="bg-white p-6 rounded-2xl shadow-xl border-t-4 border-indigo-500">
+                <h4 class="font-black text-slate-800 mb-4 uppercase tracking-wider">Pendaftaran Klien Baru</h4>
+                <div class="space-y-3">
+                    <input type="text" id="regKlienNama" placeholder="Nama PT Klien" class="w-full border p-2 rounded">
+                    <input type="text" id="regKlienAlamat" placeholder="Alamat Lengkap Klien" class="w-full border p-2 rounded">
+                    <button onclick="registerKlien()" class="w-full bg-indigo-600 text-white py-2 rounded font-bold hover:bg-indigo-700">SIMPAN DATABASE</button>
+                </div>
+            </div>
+
+            <div class="bg-white p-6 rounded-2xl shadow-xl border-t-4 border-orange-500 overflow-hidden">
+                <h4 class="font-black text-slate-800 mb-4 uppercase tracking-wider">History Terakhir</h4>
+                <div class="overflow-y-auto h-32">
+                    <table class="w-full text-xs text-left" id="historyTable">
+                        <thead class="bg-gray-100 sticky top-0">
+                            <tr><th class="p-1">No Inv</th><th class="p-1">Klien</th><th class="p-1">Total</th></tr>
+                        </thead>
+                        <tbody id="historyBody"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <div class="bg-white p-8 rounded-2xl shadow-2xl border border-gray-300">
+            <h2 class="text-3xl font-black text-slate-800 mb-8 border-b-4 border-blue-600 pb-2 inline-block">GENERATE DOKUMEN</h2>
+            
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                <div class="space-y-4 bg-gray-50 p-4 rounded-lg">
+                    <h4 class="font-bold text-blue-700 underline">IDENTITAS PENYEDIA (KITA)</h4>
+                    <select id="cvName" onchange="autoFillCV()" class="w-full border p-2 rounded shadow-sm font-bold bg-white">
+                        <option value="">-- Pilih Perusahaan Kita --</option>
+                    </select>
+                    <input type="text" id="cvAddress" placeholder="Alamat CV" class="w-full border p-2 rounded shadow-sm bg-gray-100" readonly>
+                    <input type="text" id="cvPhone" placeholder="WA / Telp" class="w-full border p-2 rounded shadow-sm bg-gray-100" readonly>
+                    <input type="hidden" id="cvCity">
+                </div>
+
+                <div class="space-y-4 bg-gray-50 p-4 rounded-lg">
+                    <h4 class="font-bold text-green-700 underline">IDENTITAS KLIEN</h4>
+                    <select id="clientName" onchange="generateAutoInvoice()" class="w-full border p-2 rounded shadow-sm font-bold bg-white">
+                        <option value="">-- Pilih Klien --</option>
+                    </select>
+                    <input type="text" id="invoiceNo" placeholder="No. Invoice (Auto)" class="w-full border p-2 rounded shadow-sm font-mono bg-blue-50">
+                    <input type="date" id="invDate" class="w-full border p-2 rounded shadow-sm">
+                </div>
+
+                <div class="space-y-4 bg-gray-50 p-4 rounded-lg">
+                    <h4 class="font-bold text-orange-700 underline">DOKUMENTASI</h4>
+                    <input type="file" id="imageInput" accept="image/*" multiple class="w-full text-sm">
+                    <div id="preview" class="w-full min-h-24 border-2 border-dashed grid grid-cols-3 gap-1 p-1 text-gray-400 overflow-hidden">Preview</div>
+                </div>
+            </div>
+
+            <div class="mb-6 overflow-x-auto">
+                <table class="w-full bg-white rounded-lg overflow-hidden shadow">
+                    <thead class="bg-slate-700 text-white text-xs uppercase">
+                        <tr>
+                            <th class="p-3 text-center w-10">No</th>
+                            <th class="p-3 text-left">Nama Materi</th>
+                            <th class="p-3 text-center">Qty</th>
+                            <th class="p-3 text-center">Freq</th>
+                            <th class="p-3 text-right">Harga Dasar</th>
+                            <th class="p-3 text-right">Total</th>
+                            <th class="p-3"></th>
+                        </tr>
+                    </thead>
+                    <tbody id="itemContainer"></tbody>
+                </table>
+                <button onclick="addItem()" class="mt-4 bg-blue-600 text-white px-4 py-2 rounded-full font-bold hover:bg-blue-700">+ Tambah Item</button>
+            </div>
+
+            <button onclick="generatePDF()" class="w-full bg-emerald-600 text-white py-4 rounded-xl font-black text-2xl shadow-xl hover:bg-emerald-700 transition-all transform hover:scale-[1.01]">
+                PROSES & CETAK PDF
+            </button>
+        </div>
+    </div>
+
+    <div id="pdf-content">
+        <div class="pdf-page">
+            <div class="kwitansi-border">
+                <div class="flex justify-between items-center mb-10">
+                    <div class="w-2/3">
+                        <h2 id="p1-cv-name" class="text-xl font-bold italic text-blue-900"></h2>
+                        <p id="p1-cv-addr" class="text-[10px]"></p>
+                    </div>
+                    <div class="text-right">
+                        <h1 class="kwitansi-title">KWITANSI</h1>
+                        <p class="text-sm mt-1">No. <span id="p1-inv" class="font-bold"></span></p>
+                    </div>
+                </div>
+                <div class="space-y-6 text-sm">
+                    <div class="flex items-center"><span class="w-40 italic">Telah Diterima Dari</span><span class="font-bold">:</span><div id="p1-client" class="line-dotted font-bold uppercase"></div></div>
+                    <div class="flex items-center"><span class="w-40 italic">Uang Sejumlah</span><span class="font-bold">:</span><div id="p1-terbilang" class="line-dotted italic bg-gray-50 px-2 py-1"></div></div>
+                    <div class="flex items-center pb-10"><span class="w-40 italic">Untuk Pembayaran</span><span class="font-bold">:</span><div id="p1-note" class="line-dotted"></div></div>
+                </div>
+                <div class="flex justify-between items-end mt-12">
+                    <div class="amount-box">Rp. <span id="p1-total"></span> ,-</div>
+                    <div class="text-center w-64">
+                        <p id="p1-date" class="mb-24 italic"></p>
+                        <p class="font-bold underline uppercase" id="p1-sign"></p>
+                        <p class="text-[10px]">Tanda Tangan & Cap Perusahaan</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="pdf-page">
+            <div class="flex justify-between border-b-2 border-gray-800 pb-4 mb-8">
+                <div>
+                    <h1 id="p2-cv-name" class="text-2xl font-black text-slate-800"></h1>
+                    <p id="p2-cv-addr" class="text-xs w-80"></p>
+                    <p id="p2-cv-phone" class="text-xs"></p>
+                </div>
+                <div class="text-right">
+                    <h2 class="text-4xl font-light text-gray-400 tracking-widest">INVOICE</h2>
+                    <p class="font-bold">No: <span id="p2-inv" class="font-normal"></span></p>
+                    <p class="font-bold">Tgl: <span id="p2-date" class="font-normal"></span></p>
+                </div>
+            </div>
+            <div class="mb-10"><p class="text-[10px] text-gray-400 font-bold uppercase">Kepada Yth:</p><p id="p2-client" class="text-xl font-bold border-l-4 border-blue-600 pl-3"></p></div>
+            <table class="w-full text-sm">
+                <thead><tr class="bg-slate-800 text-white"><th class="p-2 border">No</th><th class="p-2 border">Materi</th><th class="p-2 border">Qty</th><th class="p-2 border">Freq</th><th class="p-2 border text-right">Harga</th><th class="p-2 border text-right">Total</th></tr></thead>
+                <tbody id="p2-table"></tbody>
+                <tfoot><tr class="bg-gray-100 font-bold"><td colspan="5" class="p-3 text-right">GRAND TOTAL</td><td id="p2-total" class="p-3 text-right text-lg text-blue-700"></td></tr></tfoot>
+            </table>
+            <div class="mt-20 flex justify-end"><div class="text-center w-64"><p class="mb-24 font-bold">Hormat Kami,</p><p id="p2-sign" class="font-bold underline uppercase"></p><p class="text-xs text-gray-500">Pimpinan</p></div></div>
+        </div>
+
+        <div class="pdf-page">
+            <h2 class="text-center font-bold text-xl underline mb-10 uppercase">Berita Acara Serah Terima</h2>
+            <div class="text-sm leading-relaxed mb-8">
+                <p>Kami yang bertanda tangan di bawah ini:</p>
+                <div class="ml-10 my-4 space-y-1">
+                    <p>1. Nama : <span id="p3-cv-name" class="font-bold"></span> (PIHAK I - PENYEDIA)</p>
+                    <p>2. Nama : <span id="p3-client" class="font-bold"></span> (PIHAK II - KLIEN)</p>
+                </div>
+                <p>Menyatakan bahwa PIHAK I telah menyerahkan materi pekerjaan sesuai Invoice <span id="p3-inv" class="font-bold"></span> dengan rincian berikut:</p>
+            </div>
+            <table class="w-full text-[10px] border mb-10">
+                <thead class="bg-gray-50"><tr><th class="p-1 border">No</th><th class="p-1 border">Materi</th><th class="p-1 border">Qty</th></tr></thead>
+                <tbody id="p3-table"></tbody>
+            </table>
+            <div class="grid grid-cols-2 text-center mt-32">
+                <div><p class="font-bold italic mb-24 text-xs">PIHAK PERTAMA (Penyedia)</p><p id="p3-sign-1" class="font-bold underline"></p></div>
+                <div><p class="font-bold italic mb-24 text-xs">PIHAK KEDUA (Penerima)</p><p class="font-bold underline">____________________</p></div>
+            </div>
+        </div>
+
+        <div class="pdf-page">
+            <h2 class="text-center font-bold text-lg underline mb-6">LAMPIRAN DOKUMENTASI PEKERJAAN</h2>
+            <div id="p4-img-container" class="photo-grid"></div>
+        </div>
+    </div>
+
+    <script>
+        // --- KONFIGURASI GOOGLE SHEETS ---
+        const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxb4RNcgai6_-4OLmgjwRWYWgVt-osxIQF0mqtcJPZ0CCtfl8lnu51wKPcSYQmPPADc0g/exec';
+        let database = { klien: [], perusahaan: [], history: [] };
+
+        // Load Data Awal
+        window.onload = async () => {
+            try {
+                const resp = await fetch(SCRIPT_URL);
+                database = await resp.json();
+                renderDropdowns();
+                renderHistory();
+            } catch (e) { console.error("Gagal load data", e); }
+        };
+
+        function renderDropdowns() {
+            const cvSel = document.getElementById('cvName');
+            const clSel = document.getElementById('clientName');
+            database.perusahaan.forEach(p => {
+                cvSel.innerHTML += `<option value="${p[0]}" data-addr="${p[1]}" data-phone="${p[2]}" data-city="${p[3]}">${p[0]}</option>`;
+            });
+            database.klien.forEach(k => {
+                clSel.innerHTML += `<option value="${k[0]}">${k[0]}</option>`;
+            });
+        }
+
+        function renderHistory() {
+            const body = document.getElementById('historyBody');
+            body.innerHTML = database.history.reverse().slice(0, 10).map(h => `
+                <tr class="border-b">
+                    <td class="p-1">${h[0]}</td>
+                    <td class="p-1 font-bold">${h[2]}</td>
+                    <td class="p-1 text-blue-600">Rp ${h[3].toLocaleString()}</td>
+                </tr>
+            `).join('');
+        }
+
+        function autoFillCV() {
+            const sel = document.getElementById('cvName');
+            const opt = sel.options[sel.selectedIndex];
+            document.getElementById('cvAddress').value = opt.dataset.addr || '';
+            document.getElementById('cvPhone').value = opt.dataset.phone || '';
+            document.getElementById('cvCity').value = opt.dataset.city || '';
+        }
+
+        function generateAutoInvoice() {
+            const klien = document.getElementById('clientName').value;
+            if(!klien) return;
+            const count = database.history.filter(h => h[2] === klien).length + 1;
+            const code = klien.split(' ').map(w => w[0]).join('').substring(0, 3).toUpperCase();
+            const date = new Date();
+            document.getElementById('invoiceNo').value = `INV/${date.getFullYear()}/${code}/${count.toString().padStart(3, '0')}`;
+        }
+
+        async function registerKlien() {
+            const nama = document.getElementById('regKlienNama').value;
+            const alamat = document.getElementById('regKlienAlamat').value;
+            if(!nama || !alamat) return alert("Isi nama dan alamat klien!");
+            
+            const btn = event.target;
+            btn.innerText = "Processing...";
+            await fetch(SCRIPT_URL, {
+                method: 'POST',
+                body: JSON.stringify({ action: 'registerKlien', nama, alamat, telp: '-' })
+            });
+            alert('Klien berhasil didaftarkan!');
+            location.reload();
+        }
+
+        // --- LOGIC FORM ASLI ---
+        function terbilang(nominal) {
+            const bilangan = ["", "Satu", "Dua", "Tiga", "Empat", "Lima", "Enam", "Tujuh", "Delapan", "Sembilan", "Sepuluh", "Sebelas"];
+            let temp = "";
+            if (nominal < 12) temp = " " + bilangan[nominal];
+            else if (nominal < 20) temp = terbilang(nominal - 10) + " Belas";
+            else if (nominal < 100) temp = terbilang(Math.floor(nominal / 10)) + " Puluh" + terbilang(nominal % 10);
+            else if (nominal < 200) temp = " Seratus" + terbilang(nominal - 100);
+            else if (nominal < 1000) temp = terbilang(Math.floor(nominal / 100)) + " Ratus" + terbilang(nominal % 100);
+            else if (nominal < 2000) temp = " Seribu" + terbilang(nominal - 1000);
+            else if (nominal < 1000000) temp = terbilang(Math.floor(nominal / 1000)) + " Ribu" + terbilang(nominal % 1000);
+            else if (nominal < 1000000000) temp = terbilang(Math.floor(nominal / 1000000)) + " Juta" + terbilang(nominal % 1000000);
+            return temp;
+        }
+
+        document.getElementById('imageInput').onchange = e => {
+            const preview = document.getElementById('preview');
+            const pdfContainer = document.getElementById('p4-img-container');
+            preview.innerHTML = ''; pdfContainer.innerHTML = '';
+            Array.from(e.target.files).forEach(file => {
+                const reader = new FileReader();
+                reader.onload = event => {
+                    const imgPreview = document.createElement('img');
+                    imgPreview.src = event.target.result;
+                    imgPreview.className = "h-20 w-full object-cover rounded border";
+                    preview.appendChild(imgPreview);
+                    const div = document.createElement('div');
+                    div.className = "photo-item";
+                    div.innerHTML = `<img src="${event.target.result}" class="max-h-[350px] mx-auto object-contain shadow">`;
+                    pdfContainer.appendChild(div);
+                }
+                reader.readAsDataURL(file);
+            });
+        };
+
+        function addItem() {
+            const container = document.getElementById('itemContainer');
+            const row = document.createElement('tr');
+            row.className = 'border-b hover:bg-gray-50';
+            row.innerHTML = `
+                <td class="p-2 text-center text-sm font-bold text-gray-400">${container.children.length + 1}</td>
+                <td class="p-2"><input type="text" class="w-full border p-1 item-name"></td>
+                <td class="p-2"><input type="number" class="w-16 border p-1 text-center item-qty" oninput="calc(this)"></td>
+                <td class="p-2"><input type="number" class="w-16 border p-1 text-center item-freq" oninput="calc(this)"></td>
+                <td class="p-2"><input type="number" class="w-24 border p-1 text-right item-price" oninput="calc(this)"></td>
+                <td class="p-2"><input type="text" readonly class="w-24 border p-1 text-right bg-gray-50 font-bold item-total"></td>
+                <td class="p-2"><button onclick="this.parentElement.parentElement.remove()" class="text-red-500">✕</button></td>
+            `;
+            container.appendChild(row);
+        }
+
+        function calc(el) {
+            const row = el.parentElement.parentElement;
+            const q = row.querySelector('.item-qty').value || 0;
+            const f = row.querySelector('.item-freq').value || 1;
+            const p = row.querySelector('.item-price').value || 0;
+            row.querySelector('.item-total').value = q * f * p;
+        }
+
+        async function generatePDF() {
+            const data = {
+                cv: document.getElementById('cvName').value,
+                addr: document.getElementById('cvAddress').value,
+                phone: document.getElementById('cvPhone').value,
+                city: document.getElementById('cvCity').value,
+                client: document.getElementById('clientName').value,
+                inv: document.getElementById('invoiceNo').value,
+                date: document.getElementById('invDate').value
+            };
+
+            if(!data.cv || !data.client || !data.inv) return alert("Lengkapi data perusahaan dan klien!");
+
+            document.querySelectorAll('[id^="p1-cv-name"], [id^="p2-cv-name"], [id^="p3-cv-name"]').forEach(el => el.innerText = data.cv);
+            document.querySelectorAll('[id$="-inv"]').forEach(el => el.innerText = data.inv);
+            document.querySelectorAll('[id$="-client"]').forEach(el => el.innerText = data.client);
+            document.getElementById('p1-cv-addr').innerText = data.addr + " | " + data.phone;
+            document.getElementById('p2-cv-addr').innerText = data.addr;
+            document.getElementById('p2-cv-phone').innerText = data.phone;
+            document.getElementById('p1-date').innerText = data.city + ", " + data.date;
+            document.getElementById('p2-date').innerText = data.date;
+            document.getElementById('p1-sign').innerText = data.cv;
+            document.getElementById('p2-sign').innerText = data.cv;
+            document.getElementById('p3-sign-1').innerText = data.cv;
+            document.getElementById('p1-note').innerText = "Pembayaran materi pekerjaan sesuai invoice #" + data.inv;
+
+            let rowsHtml = ''; let bastHtml = ''; let grandTotal = 0;
+            document.querySelectorAll('#itemContainer tr').forEach((row, i) => {
+                const name = row.querySelector('.item-name').value;
+                const q = row.querySelector('.item-qty').value;
+                const f = row.querySelector('.item-freq').value;
+                const p = parseFloat(row.querySelector('.item-price').value || 0);
+                const t = parseFloat(row.querySelector('.item-total').value || 0);
+                grandTotal += t;
+                rowsHtml += `<tr><td class="border p-1 text-center">${i+1}</td><td class="border p-1">${name}</td><td class="border p-1 text-center">${q}</td><td class="border p-1 text-center">${f}</td><td class="border p-1 text-right">${p.toLocaleString()}</td><td class="border p-1 text-right">${t.toLocaleString()}</td></tr>`;
+                bastHtml += `<tr><td class="border p-1 text-center">${i+1}</td><td class="border p-1">${name}</td><td class="border p-1 text-center">${q}</td></tr>`;
+            });
+
+            document.getElementById('p2-table').innerHTML = rowsHtml;
+            document.getElementById('p3-table').innerHTML = bastHtml;
+            document.getElementById('p2-total').innerText = "Rp. " + grandTotal.toLocaleString('id-ID');
+            document.getElementById('p1-total').innerText = grandTotal.toLocaleString('id-ID');
+            document.getElementById('p1-terbilang').innerText = terbilang(grandTotal) + " Rupiah";
+
+            // Simpan ke History Sheets
+            fetch(SCRIPT_URL, {
+                method: 'POST',
+                body: JSON.stringify({ action: 'saveInvoice', inv: data.inv, date: data.date, client: data.client, total: grandTotal })
+            });
+
+            const element = document.getElementById('pdf-content');
+            element.style.display = 'block';
+            html2pdf().set({
+                margin: 0,
+                filename: `TAGIHAN_${data.client}_${data.inv}.pdf`,
+                html2canvas: { scale: 2, useCORS: true },
+                jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+            }).from(element).save().then(() => {
+                element.style.display = 'none';
+                alert("Dokumen berhasil dicetak dan data disimpan ke history!");
+            });
+        }
+
+        addItem();
+    </script>
+</body>
+</html>
