@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sistem Invoice Pro - Update Rekening & Format</title>
+    <title>Sistem Invoice Pro - Event Update</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
     <style>
@@ -53,18 +53,24 @@
         <div class="bg-white p-8 rounded-2xl shadow-2xl border border-gray-300">
             <h2 id="formTitle" class="text-3xl font-black mb-8 border-b-4 border-blue-600 pb-2 inline-block uppercase italic">Input Pekerjaan Baru</h2>
             
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
                 <div class="bg-gray-50 p-4 rounded-lg space-y-3">
                     <label class="font-bold text-blue-700 text-xs uppercase">Pihak Pertama (Penyedia)</label>
                     <select id="cvName" onchange="autoFillCV()" class="w-full border p-2 rounded font-bold bg-white outline-none"></select>
                     <input type="text" id="cvAddress" placeholder="Alamat Kantor" class="w-full border p-2 rounded bg-gray-100 text-[10px]" readonly>
-                    <input type="text" id="cvBank" placeholder="Info Rekening (Otomatis dari Kolom E)" class="w-full border p-2 rounded text-[10px]">
+                    <input type="text" id="cvBank" placeholder="Info Rekening (Otomatis)" class="w-full border p-2 rounded text-[10px]">
                 </div>
                 <div class="bg-gray-50 p-4 rounded-lg space-y-3">
                     <label class="font-bold text-green-700 text-xs uppercase">Pihak Kedua (Klien)</label>
                     <select id="clientName" onchange="generateAutoInvoice()" class="w-full border p-2 rounded font-bold bg-white outline-none"></select>
                     <input type="text" id="invoiceNo" placeholder="No Invoice" class="w-full border p-2 rounded font-mono bg-blue-50">
                     <input type="date" id="invDate" class="w-full border p-2 rounded">
+                </div>
+                <div class="bg-gray-50 p-4 rounded-lg space-y-3">
+                    <label class="font-bold text-purple-700 text-xs uppercase">Informasi Event</label>
+                    <input type="text" id="eventName" placeholder="Nama Event" class="w-full border p-2 rounded text-xs">
+                    <input type="date" id="eventDate" class="w-full border p-2 rounded text-xs">
+                    <input type="text" id="eventLoc" placeholder="Lokasi Event" class="w-full border p-2 rounded text-xs">
                 </div>
                 <div class="bg-gray-50 p-4 rounded-lg space-y-3">
                     <label class="font-bold text-orange-700 text-xs uppercase">Dokumentasi Foto</label>
@@ -134,7 +140,7 @@
 
         <div class="pdf-page" id="page2">
             <div id="kop-target-2"></div>
-            <div class="flex justify-between mb-8">
+            <div class="flex justify-between mb-4">
                 <div>
                     <p class="text-[10px] font-bold text-gray-400">KEPADA YTH:</p>
                     <p id="p2-client" class="text-xl font-black uppercase text-slate-800"></p>
@@ -148,6 +154,13 @@
                     </table>
                 </div>
             </div>
+
+            <div class="mb-6 p-3 bg-blue-50 border-l-4 border-blue-600 grid grid-cols-2 gap-2 text-[10px]">
+                <div><p>NAMA EVENT: <span id="p2-event-name" class="font-bold uppercase"></span></p></div>
+                <div><p>LOKASI: <span id="p2-event-loc" class="font-bold uppercase"></span></p></div>
+                <div><p>TANGGAL EVENT: <span id="p2-event-date" class="font-bold"></span></p></div>
+            </div>
+
             <table class="w-full text-xs border-collapse">
                 <thead><tr class="bg-slate-800 text-white"><th class="p-2 border border-slate-700">NO</th><th class="p-2 border border-slate-700 text-left">DESKRIPSI PEKERJAAN</th><th class="p-2 border border-slate-700">QTY</th><th class="p-2 border border-slate-700">FREQ</th><th class="p-2 border border-slate-700 text-right">HARGA</th><th class="p-2 border border-slate-700 text-right">TOTAL</th></tr></thead>
                 <tbody id="p2-table"></tbody>
@@ -164,7 +177,14 @@
 
         <div class="pdf-page" id="page3">
             <div id="kop-target-3"></div>
-            <h2 class="text-center font-black text-xl underline mb-10 uppercase tracking-widest">Berita Acara Serah Terima</h2>
+            <h2 class="text-center font-black text-xl underline mb-6 uppercase tracking-widest">Berita Acara Serah Terima</h2>
+            
+            <div class="mb-6 text-sm space-y-1 bg-gray-50 p-3 rounded border">
+                <p>Nama Pekerjaan/Event : <span id="p3-event-name" class="font-bold uppercase"></span></p>
+                <p>Lokasi Pelaksanaan : <span id="p3-event-loc" class="font-bold uppercase"></span></p>
+                <p>Waktu Pelaksanaan : <span id="p3-event-date" class="font-bold"></span></p>
+            </div>
+
             <p class="text-sm leading-relaxed mb-6">Pada hari ini, Kami yang bertanda tangan di bawah ini menyatakan bahwa <b>PIHAK PERTAMA</b> telah menyelesaikan dan menyerahkan hasil pekerjaan kepada <b>PIHAK KEDUA</b> dengan rincian sebagai berikut:</p>
             <table class="w-full text-xs border mb-10"><thead class="bg-gray-100"><tr><th class="p-2 border w-12">No</th><th class="p-2 border text-left">Materi Pekerjaan</th><th class="p-2 border w-24">Volume</th></tr></thead><tbody id="p3-table"></tbody></table>
             <p class="text-sm mb-12 italic text-gray-600">* Hasil pekerjaan telah diperiksa dan diterima dalam kondisi baik.</p>
@@ -178,17 +198,24 @@
             <div id="kop-target-4"></div>
             <h2 class="text-center font-black text-xl underline mb-10 uppercase tracking-widest">Kontrol Pemasangan Lapangan</h2>
             <div class="grid grid-cols-2 gap-4 text-xs mb-8 bg-gray-50 p-4 border-l-4 border-orange-500">
-                <p>NAMA KLIEN: <span id="p4-client" class="font-bold uppercase"></span></p>
-                <p>NOMOR INVOICE: <span id="p4-inv" class="font-bold"></span></p>
+                <div class="space-y-1">
+                    <p>NAMA KLIEN: <span id="p4-client" class="font-bold uppercase"></span></p>
+                    <p>NAMA EVENT: <span id="p4-event-name" class="font-bold uppercase"></span></p>
+                    <p>TGL EVENT: <span id="p4-event-date" class="font-bold"></span></p>
+                </div>
+                <div class="space-y-1">
+                    <p>NOMOR INVOICE: <span id="p4-inv" class="font-bold"></span></p>
+                    <p>LOKASI UTAMA: <span id="p4-event-loc" class="font-bold uppercase"></span></p>
+                </div>
             </div>
             <table class="w-full text-[10px] border mb-10">
-                <thead class="bg-slate-100"><tr><th class="p-2 border">NO</th><th class="p-2 border text-left">LOKASI / MATERI</th><th class="p-2 border w-20">KONDISI</th><th class="p-2 border text-left">KETERANGAN</th></tr></thead>
+                <thead class="bg-slate-100"><tr><th class="p-2 border">NO</th><th class="p-2 border text-left">MATERI PEKERJAAN</th><th class="p-2 border">LOKASI EVENT</th><th class="p-2 border w-20">KONDISI</th><th class="p-2 border text-left">KETERANGAN</th></tr></thead>
                 <tbody id="p4-table"></tbody>
             </table>
             <div class="grid grid-cols-3 text-[9px] text-center mt-20 gap-4">
                 <div><p class="mb-20">DIBUAT OLEH:</p><p class="underline font-bold">TIM LAPANGAN</p></div>
                 <div><p class="mb-20">DIPERIKSA OLEH:</p><p class="underline font-bold">PIC/PENANGGUNG JAWAB</p></div>
-                <div><p class="mb-20">MENGETAHUI:</p><p class="underline font-bold">TL/SC</p></div>
+                <div><p class="mb-20">MENGETAHUI:</p><p class="underline font-bold">KOORDINATOR/TL/SC</p></div>
             </div>
         </div>
 
@@ -211,7 +238,7 @@
                 const r = await fetch(SCRIPT_URL);
                 db = await r.json();
                 renderUI();
-            } catch (e) { alert("Gagal mengambil data."); }
+            } catch (e) { console.error(e); }
             toggleLoader(false);
         }
 
@@ -226,9 +253,7 @@
             clS.innerHTML = '<option value="">-- Pilih Klien --</option>';
             selH.innerHTML = '<option value="">-- Pilih Data History --</option>';
             
-            // Render list perusahaan
             db.perusahaan.forEach(p => {
-                // p[4] adalah kolom E (index 4)
                 cvS.innerHTML += `<option value="${p[0]}" data-addr="${p[1]}" data-city="${p[3]}" data-bank="${p[4] || ''}">${p[0]}</option>`;
             });
             
@@ -283,6 +308,10 @@
             document.getElementById('clientName').value = h[2];
             document.getElementById('cvName').value = h[5];
             autoFillCV();
+
+            document.getElementById('eventName').value = h[7] || '';
+            document.getElementById('eventDate').value = h[8] || '';
+            document.getElementById('eventLoc').value = h[9] || '';
             
             const container = document.getElementById('itemContainer');
             container.innerHTML = '';
@@ -298,6 +327,9 @@
             isEditMode = false;
             document.getElementById('formTitle').innerText = "Input Pekerjaan Baru";
             document.getElementById('invoiceNo').value = '';
+            document.getElementById('eventName').value = '';
+            document.getElementById('eventDate').value = '';
+            document.getElementById('eventLoc').value = '';
             document.getElementById('itemContainer').innerHTML = '';
             document.getElementById('cvBank').value = ''; 
             document.getElementById('btnSave').innerText = "Simpan & Sinkronkan";
@@ -317,6 +349,9 @@
                 cv: document.getElementById('cvName').value,
                 addr: document.getElementById('cvAddress').value,
                 bank: document.getElementById('cvBank').value, 
+                eventName: document.getElementById('eventName').value,
+                eventDate: document.getElementById('eventDate').value,
+                eventLoc: document.getElementById('eventLoc').value,
                 items: items,
                 total: items.reduce((a,c) => a + (c.q * c.f * c.p), 0)
             };
@@ -357,7 +392,6 @@
             const h = db.history.find(x => x[0] === id), items = JSON.parse(h[4]);
             const city = db.perusahaan.find(p => p[0] === h[5])?.[3] || "Jakarta";
             
-            // Prioritas: Ambil data bank dari input form jika ada, jika tidak, cari di DB Perusahaan Kolom E
             const infoBankManual = document.getElementById('cvBank').value;
             const infoBankDB = db.perusahaan.find(p => p[0] === h[5])?.[4] || "-";
             document.getElementById('p2-rekening-display').innerText = infoBankManual || infoBankDB;
@@ -374,6 +408,11 @@
             document.querySelectorAll('[id$="-client"]').forEach(e => e.innerText = h[2]);
             document.querySelectorAll('[id$="-sign"], [id$="-sign-1"]').forEach(e => e.innerText = h[5]);
             
+            // Mapping Event Details ke semua Page (P2, P3, P4)
+            document.querySelectorAll('[id$="-event-name"]').forEach(e => e.innerText = h[7] || '-');
+            document.querySelectorAll('[id$="-event-date"]').forEach(e => e.innerText = formatTglIndo(h[8]) || '-');
+            document.querySelectorAll('[id$="-event-loc"]').forEach(e => e.innerText = h[9] || '-');
+
             const tglFull = formatTglIndo(h[1], city);
             document.getElementById('p1-date').innerText = tglFull;
             document.getElementById('p2-date-raw').innerText = formatTglIndo(h[1]);
@@ -383,14 +422,14 @@
             document.getElementById('p1-terbilang').innerText = terbilang(nominal) + " Rupiah";
             document.getElementById('p1-total').innerText = nominal.toLocaleString();
             document.getElementById('p2-total').innerText = "Rp. " + nominal.toLocaleString();
-            document.getElementById('p1-note').innerText = "Pemasangan materi promosi sesuai invoice #" + h[0];
+            document.getElementById('p1-note').innerText = "Pemasangan materi promosi";
 
             let hI = "", hB = "", hK = "";
             items.forEach((item, i) => {
                 const t = item.q * item.f * item.p;
                 hI += `<tr class="border"><td class="p-2 text-center">${i+1}</td><td class="p-2">${item.n}</td><td class="p-2 text-center">${item.q}</td><td class="p-2 text-center">${item.f}</td><td class="p-2 text-right">${Number(item.p).toLocaleString()}</td><td class="p-2 text-right font-bold">${t.toLocaleString()}</td></tr>`;
                 hB += `<tr><td class="p-2 border text-center">${i+1}</td><td class="p-2 border">${item.n}</td><td class="p-2 border text-center font-bold">${item.q} Unit</td></tr>`;
-                hK += `<tr><td class="p-2 border text-center">${i+1}</td><td class="p-2 border font-medium">${item.n}</td><td class="p-2 border text-center text-green-600 font-bold">✓ OK</td><td class="p-2 border">Terpasang rapi</td></tr>`;
+                hK += `<tr><td class="p-2 border text-center">${i+1}</td><td class="p-2 border font-medium">${item.n}</td><td class="p-2 border text-center">${h[9] || '-'}</td><td class="p-2 border text-center text-green-600 font-bold">✓ OK</td><td class="p-2 border">Terpasang rapi</td></tr>`;
             });
             document.getElementById('p2-table').innerHTML = hI;
             document.getElementById('p3-table').innerHTML = hB;
@@ -418,12 +457,10 @@
             return temp.trim();
         }
 
-        // FUNGSI AUTO FILL DENGAN REKENING DARI KOLOM E
         function autoFillCV() {
             const selectEl = document.getElementById('cvName');
             const o = selectEl.options[selectEl.selectedIndex];
             document.getElementById('cvAddress').value = o.dataset.addr || '';
-            // Memasukkan data dari data-bank (Kolom E) ke input cvBank
             document.getElementById('cvBank').value = o.dataset.bank || '';
         }
 
@@ -450,6 +487,3 @@
     </script>
 </body>
 </html>
-
-
-
